@@ -128,10 +128,14 @@ print "phiG2=",scipy.exp(lnphiG1[1])
 '''Liquid Phase'''
 V00=((n*b[0]-m*c[0])*Vliq[0]+n*m*(c[0]*b[0]-b[0]*c[0]))/((Vliq[0]+n*b[0])*(Vliq[0]+m*c[0]))
 lnphiL1=-(scipy.log((Vliq[0]-b[0])/Vliq[0]))+(b[0]/(Vliq[0]-b[0]))+((2*(x1*a[0]+x2*a[0]))-a*(m*c[0]-n*b[0]))*(scipy.log((Vliq[0]+n*b[0])/(Vliq[0]+m*c[0])))/(R*T*(m*c[0]-n*b[0])**2)+((a[0]/(R*T*(m*c[0]-n*b[0])))*V00)-scipy.log(Zl[0])
+'''
 print""
 print "phiL1=",scipy.exp(lnphiL1[0])
 print "phiL2=",scipy.exp(lnphiL1[1])
+'''
 
 y1=x1*scipy.exp(lnphiG1[0])/scipy.exp(lnphiL1[0]) #phi-phi model
+'''
 print ""
 print "Vapour Phase Composition of Component 1=",y1
+'''
