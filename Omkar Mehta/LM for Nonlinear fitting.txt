@@ -1,0 +1,75 @@
+Fitting data can be quite complicated at times. Finding the optimal solutions to non-linear data can be especially challenging. I have worked hard on making a user-friendly Python script that allows one to easily find the optimal solution for a non-linear least-squares regression using Python.
+
+Here, I outline how to perform non-linear least-squares optimization to a 2D data set using the Levenberg-Marquandt algorithm in the Python language. To use this Python program, all you need to do is guess at the function that fits your data. In my example, I suspect that my data follows the following function: 
+f(t) = log(10^(A1*x+A2)-1)+A3. 
+There are an array of mathematical methods out there to find the parameters that give an optimal fit to data, but the most widely used is likely the Levenberg-Marquandt algorithm for non-linear least-squares optimization. The algorithm works by minimizing the squared residuals, defined for each data point as 
+Residual^2 = (y-f(t))^2, 
+where y is the measured dependent variable and f(t) is the calculated value. The LM algorithm is a iterative process, guessing at the solution of the best minimum. Unless you have a case with multiple minimua, the algorithm should arrive to a solution without a hitch. If you are unlucky and do have multiple minima, the algorithm will only converge if the inital guess is somewhat close to the optimal solution. The Scipy package uses the Levenberg-Marquandt algorithm, called as the function leastsq.
+#
+# Import the required packages. 
+# I always forget which are actually needed, so I import them all.
+#
+from scipy import *
+from scipy.optimize import leastsq
+import scipy.io.array_import
+import matplotlib.pylab as plt
+import numpy as np
+from math import *
+
+#
+# Define your function to calculate the residuals. 
+# The fitting function holds your parameter values.  
+#
+def residuals(p, y, x):
+        err = y-pval(x,p)
+        return err
+
+def pval(x, p):
+        return np.log10(10**(p[0]*x+p[1])-1)+p[2]
+
+#
+# Use scipy.io.array_import.read_array to read in your data
+#
+filename=('data.dat')
+data = scipy.io.array_import.read_array(filename)
+
+x = data[:,0]
+y = data[:,1]
+
+#
+# You must make a guess at the initial paramters.  
+# Don't worry if you have a difficult time guessing at the
+# optimal parameters, you can simply 'fine tune'.
+#
+A1_0=1.0
+A2_0=0.3
+A3_0=0.5
+
+#
+# The leastsq package calls the Levenberg-Marquandt algorithm.
+#  
+pname = (['A1','A2','A3'])
+p0 = array([A1_0 , A2_0, A3_0])
+plsq = leastsq(residuals, p0, args=(y, x), maxfev=2000)
+
+#
+# Now, plot your data
+#
+plt.plot(x,y,'ko',x,pval(x,plsq[0]),'k')
+title('Least-squares fit to data')
+xlabel('x')
+ylabel('y')
+legend(['Data', 'Fit'],loc=4)
+
+#
+# Your best-fit paramters are kept within plsq[0].
+#
+print plsq[0]
+[  3.85138097e-04   2.46011927e-05   6.14616796e+00]
+
+#
+# The sum of the residuals
+#
+resid = sum(np.sqrt((y-pval(x,plsq[0]))**2))
+print resid
+6.10612962168
