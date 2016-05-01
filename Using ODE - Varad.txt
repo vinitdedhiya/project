@@ -1,0 +1,114 @@
+'''Method to solve ODEs simultaneously obtained from :
+https://www.youtube.com/watch?v=U7uyj9BaNKg '''
+
+
+import math
+from pylab import *
+from scipy.integrate import odeint
+import pylab
+import numpy
+from scipy.optimize import fsolve
+import matplotlib.pyplot as plt
+
+
+T=298.0                         #Temperature assumed as 298 K
+Pressure=1.0                    #in atm
+P=1.0*101325.0                  #converted to pascals
+Hco2=1635/55.342                #Henrys constant for CO2 in atm/(mol/dm3) (obtained from Perrys Handbook 8th Edition 2-130 Table 2-123)
+Hch4=39200/55.342               #Henrys constant for Methane in atm/(mol/dm3) (obtained from Perrys Handbook 8th Edition 2-130 Table 2-123)
+kla_co2=0.002                   # typical values from Perrys Handbook Edition 7 pg 2113 table 23-9 in 1/s
+kla_ch4=0.0001                  # typical values from Perrys Handbook Edition 7 pg 2113 table 23-9 in 1/s
+kga_w=0.0005                    #assumed typical values in 1/s 
+A=1.0                           # cross sectional area in m2
+z=10.0                          # height of column in m
+pwsat=3290.0                    # in Pa;source given below
+'''Source of the pwsat value:
+"http://www.engineeringtoolbox.com/water-vapor-saturation-pressure-d_599.html" '''
+
+'''Now we assume initial flow rates @ z=0 on both sides in moles per sec'''
+G_ini=100.0                     #initial flow rate in moles per sec on gas side
+L_ini=100.0                     #initial flowrate of liquid in moles per sec
+
+x_co2_ini=0.5                   #Given inlet conditions
+x_ch4_ini=0.5                   #Given inlet conditions
+
+"The column will now be divided into 100 parts and solved"
+n=100
+
+'''Defining a function which has my 6 ODEs'''
+def varad(c,z):
+   
+    '''ODEs for the gas side'''
+    '''The factor of 10^6 comes into play to convert molar flow rate into molars'''    
+    
+    a=kla_co2*A*((10**6*c[3])/(c[5]*18)-(c[0]/(c[0]+c[1]+c[2]))*P/Hco2)     #CO2 
+    b=kla_ch4*A*((10**6*c[4])/(c[5]*18)-(c[1]/(c[0]+c[1]+c[2]))*P/Hch4)     #Methane    
+    d=-kga_w*A*(pwsat-(c[1]/(c[0]+c[1]+c[2]))*P)                            #Water  
+    
+    '''ODEs for the liquid side'''
+    e=kla_co2*A*((10**6*c[3])/(18*c[5])-(c[0]/(c[0]+c[1]+c[2]))*P/Hco2)     #CO2
+    f=kla_ch4*A*(10**6*c[4]/(18*c[5])-(c[1]/(c[0]+c[1]+c[2]))*P/Hch4)       #Methane
+    g=-kga_w*A*(pwsat-(c[1]/(c[0]+c[1]+c[2]))*P)                            #Water
+    dcdt=[a,b,d,e,f,g]    
+    return dcdt 
+
+
+'''To define a function which will reduce my error'''
+def err(y):
+    
+    z=numpy.linspace(0,1,n+1)
+    c=odeint(varad,([x_co2_ini*G_ini,x_ch4_ini*G_ini,0,y[0],y[1],y[2]]),z) 
+    e=[(c[100])[3],(c[100])[4],((c[100])[5]-100.0)]
+    return e
+
+y = fsolve(err,[0.01,.01,99.99])
+
+
+'''Solution of ode with the guess value obtained from above'''
+
+z=numpy.linspace(0,1,101)
+dcdt0=[50,50,0,y[0],y[1],y[2]]
+c=odeint(varad,dcdt0,z)
+
+
+print "Molar flow rate of CO2 gas side" "\n \n",c[:,0]
+print "Molar flow rate of Methane gas side" "\n \n",c[:,1]
+print "Molar flow rate of Water gas side" "\n \n",c[:,2]
+print "Molar flow rate of CO2 liquid side" "\n \n",c[:,3]
+print "Molar flow rate of Methane liquid side" "\n \n",c[:,4]
+print "Molar flow rate of Water liquid side" "\n \n",c[:,5]
+
+
+'''Plotting of data points'''
+
+pylab.figure('Plot of flow rate in moles per sec vs  Height on gas side for CO2')
+plt.plot(z,c[:,0])
+plt.xlabel('Height')
+plt.ylabel('Flow Rate in moles per sec')
+pylab.show()
+pylab.figure('Plot of flow rate in moles per sec vs  Height on gas side for Methane')
+plt.plot(z,c[:,1])
+plt.xlabel('Height')
+plt.ylabel('Flow Rate in moles per sec')
+pylab.show()
+pylab.figure('Plot of flow rate in moles per sec vs  Height on gas side for Water')
+plt.plot(z,c[:,2])
+plt.xlabel('Height')
+plt.ylabel('Flow Rate in moles per sec')
+pylab.show()
+
+pylab.figure('Plot of flow rate in moles per sec vs  Height on liquid side for CO2')
+plt.plot(z,c[:,3])
+plt.xlabel('Height')
+plt.ylabel('Flow Rate in moles per sec')
+pylab.show()
+pylab.figure('Plot of flow rate in moles per sec vs  Height on liquid side for Methane')
+plt.plot(z,c[:,4])
+plt.xlabel('Height')
+plt.ylabel('Flow Rate in moles per sec')
+pylab.show()
+pylab.figure('Plot of flow rate in moles per sec vs  Height on liquid side for Water')
+plt.plot(z,c[:,5])
+plt.xlabel('Height')
+plt.ylabel('Flow Rate in moles per sec')
+pylab.show()
